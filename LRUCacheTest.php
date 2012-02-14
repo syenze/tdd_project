@@ -1,6 +1,7 @@
 <?php
 
 require_once "LRUCache.php";
+# require_once "LRUTime.php";
 
 class LRUCacheTest extends PHPUnit_Framework_TestCase
 {
@@ -43,6 +44,8 @@ class LRUCacheTest extends PHPUnit_Framework_TestCase
         $lru->put(1, "hoge");
 
         $this->assertEquals(2, $lru->getOldest());
+        $this->assertEquals("hoge", $lru->get(1));
+        $this->assertEquals("moge", $lru->get(2));
     }
 
     /**
