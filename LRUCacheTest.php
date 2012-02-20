@@ -41,10 +41,10 @@ class LRUCacheTest extends PHPUnit_Framework_TestCase
         $lru = new LRUCache();
         $lru->put(1, "hoge");
         $lru->put(2, "moge");
-        $lru->put(1, "hoge");
+        $lru->put(1, "gege");
 
         $this->assertEquals(2, $lru->getOldest());
-        $this->assertEquals("hoge", $lru->get(1));
+        $this->assertEquals("gege", $lru->get(1));
         $this->assertEquals("moge", $lru->get(2));
     }
 
@@ -76,51 +76,98 @@ class LRUCacheTest extends PHPUnit_Framework_TestCase
      * リミットに文字列をいれた場合
      * @test
      **/
-//    function リミットが文字列でおかしくなる(){
-//        $lru = new LRUCache( "gege" );
-//        $this->assertEquals(null, $lru);
-//    }
+    function キャッシュサイズに文字列を設定した場合、デフォルト値が設定されること(){
+        $lru = new LRUCache( "gege" );
+        $this->assertEquals(0, $lru->getCacheSize() );
+        $lru->put(1, "hoge");
+        $lru->put(2, "moge");
+        $lru->put(3, "fuga");
+        $this->assertEquals(2, $lru->getCacheSize() );
+    }
 
     /**
      * @test
      */
-    function getLimitでlimitの値を取れること() {
+    function getCacheSizeでlimitの値を取れること() {
         $lru = new LRUCache(5);
-        $this->assertEquals(5, $lru->getLimit());
+        $this->assertEquals(0, $lru->getCacheSize());
     }
 
     /**
      * @test
      */
-    function changeLimitでlimitの値を変更できること() {
+    function キャッシュ保持数が変更できること() {
         $lru = new LRUCache(3);
-        $lru->changeLimit(5);
-        $this->assertEquals(5, $lru->getLimit());
+        $lru->put(1, 'one');
+        $lru->put(2, 'two');
+        $lru->put(3, 'three');
+        $lru->put(4, 'four');
+
+        $this->assertNull($lru->get(1));
+
+        $lru->setCacheSize(5);
+
+        $lru->put(5, 'five');
+        $lru->put(6, 'six');
+
+        $this->assertEquals(5, $lru->getCacheSize());
+        $this->assertEquals('five', $lru->get(5));
+        $this->assertEquals('six', $lru->get(6));
+
+
     }
 
     /**
      * @test
      */
-    function changeLimitでサイズを減らした時に、データが正しく帰ってくること() {
+    function キャッシュのサイズを減らした時に、データが正しく帰ってくること() {
         $lru  = new LRUCache(5);
-        $lru->put(1, 1);
-        $lru->put(2, 2);
-        $lru->put(3, 3);
-        $lru->put(4, 4);
-        $lru->put(5, 5);
-        $lru->changeLimit(3);
+        $lru->put(1, 'one');
+        $lru->put(2, 'two');
+        $lru->put(3, 'three');
+        $lru->put(4, 'four');
+        $lru->put(5, 'five');
+
+        $lru->setCacheSize( 3 );
         $this->assertNull($lru->get(1));
         $this->assertNull($lru->get(2));
-        $this->assertEquals(3, $lru->get(3));
-        $this->assertEquals(4, $lru->get(4));
-        $this->assertEquals(5, $lru->get(5));
+        $this->assertEquals('three', $lru->get(3));
+        $this->assertEquals('four', $lru->get(4));
+        $this->assertEquals('five', $lru->get(5));
     }
 
     /**
      * @test
      */
-    function 一定時間経ったデータを削除する()
+    function 保持期限を過ぎたデータは消去される()
     {
+        $lru  = new LRUCache(5);
+        $lru->put( 1 , 'one' );
+
+        $this->assertEquals('one', $lru->get(1));
+        $lru->modCacheExpire( time() - 1000 );
+        $this->assertNull($lru->get(1));
+
+        $lru->put( 2 , 'two' );
+        $this->assertEquals('two', $lru->get(2));
 
     }
+
+    /**
+     * @test
+     */
+    function 保持期限を過ぎていないデータは残される()
+    {
+        $lru  = new LRUCache(5);
+        $lru->put( 1 , 'one', 100 );
+        $lru->put( 2 , 'two', 2000 );
+
+        $this->assertEquals('one', $lru->get(1));
+        $this->assertEquals('two', $lru->get(2));
+        $lru->modCacheExpire( time() - 200 );
+        $this->assertNull($lru->get(1));
+        $this->assertEquals('two', $lru->get(2));
+
+    }
+
 }
